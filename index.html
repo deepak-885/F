@@ -1,0 +1,76 @@
+DJR Logi - Battle Royale Game Core Setup (Unity C#)
+
+using UnityEngine; using System.Collections;
+
+public class GameManager : MonoBehaviour { public GameObject playerPrefab; public Transform[] spawnPoints; public GameObject fighterJet;
+
+void Start()
+{
+    StartCoroutine(DropPlayersFromJet());
+}
+
+IEnumerator DropPlayersFromJet()
+{
+    GameObject jet = Instantiate(fighterJet, new Vector3(0, 100, -200), Quaternion.identity);
+    for (int i = 0; i < spawnPoints.Length; i++)
+    {
+        yield return new WaitForSeconds(1f);
+        GameObject player = Instantiate(playerPrefab, jet.transform.position + Vector3.down * 5, Quaternion.identity);
+        player.GetComponent<Rigidbody>().AddForce(Vector3.down * 500);
+    }
+    yield return new WaitForSeconds(5f);
+    Destroy(jet);
+}
+
+}
+
+// DJR Logi Abilities public class DJRLogiAbility : MonoBehaviour { public float healRadius = 10f; public int healAmount = 20; public float speedBoost = 1.5f; public float duration = 5f;
+
+private bool isActive = false;
+
+public void ActivateAbility()
+{
+    if (!isActive)
+        StartCoroutine(AbilityRoutine());
+}
+
+IEnumerator AbilityRoutine()
+{
+    isActive = true;
+    Collider[] hitColliders = Physics.OverlapSphere(transform.position, healRadius);
+    foreach (var hit in hitColliders)
+    {
+        if (hit.CompareTag("Player"))
+        {
+            PlayerStats stats = hit.GetComponent<PlayerStats>();
+            stats.Heal(healAmount);
+            stats.BoostSpeed(speedBoost, duration);
+        }
+    }
+    yield return new WaitForSeconds(duration);
+    isActive = false;
+}
+
+}
+
+// Sample Player Stats public class PlayerStats : MonoBehaviour { public int health = 100; private float originalSpeed = 5f; public float moveSpeed = 5f;
+
+public void Heal(int amount)
+{
+    health += amount;
+    if (health > 100) health = 100;
+}
+
+public void BoostSpeed(float multiplier, float time)
+{
+    StartCoroutine(SpeedBoost(multiplier, time));
+}
+
+IEnumerator SpeedBoost(float multiplier, float time)
+{
+    moveSpeed *= multiplier;
+    yield return new WaitForSeconds(time);
+    moveSpeed = originalSpeed;
+}
+
+}
